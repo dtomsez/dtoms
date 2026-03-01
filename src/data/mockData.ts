@@ -1,4 +1,4 @@
-import { User, Task } from '../types';
+import type { User, Task } from '../types';
 
 export const MOCK_USERS: User[] = [
   {

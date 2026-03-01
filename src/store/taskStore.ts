@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Task, TaskStatus, User } from '../types';
+import type { Task, TaskStatus, User } from '../types';
 import { MOCK_TASKS, MOCK_USERS } from '../data/mockData';
 
 interface TaskStore {

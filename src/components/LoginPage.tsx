@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTaskStore } from '../store/taskStore';
-import { User } from '../types';
+import type { User } from '../types';
 
 export function LoginPage() {
   const { users, login } = useTaskStore();
