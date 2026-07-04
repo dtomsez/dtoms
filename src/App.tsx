@@ -1,14 +1,25 @@
-import { useTaskStore } from './store/taskStore';
-import { LoginPage } from './components/LoginPage';
-import { PersonalDashboard } from './components/PersonalDashboard';
-import { ManagerDashboard } from './components/ManagerDashboard';
+import { useAppStore } from './store/appStore'
+import LoginPage from './components/LoginPage'
+import Layout from './components/Layout'
+import ProfileSetup from './components/ProfileSetup'
+import BaZiModule from './components/BaZiModule'
+import TongShuModule from './components/TongShuModule'
+import QiMenModule from './components/QiMenModule'
+import SeshetaChat from './components/SeshetaChat'
+import NumerologyModule from './components/NumerologyModule'
 
-function App() {
-  const { currentUser } = useTaskStore();
+export default function App() {
+  const { user, birth, module } = useAppStore()
 
-  if (!currentUser) return <LoginPage />;
-  if (currentUser.role === 'manager') return <ManagerDashboard />;
-  return <PersonalDashboard />;
+  if (!user) return <LoginPage />
+
+  return (
+    <Layout>
+      {module === 'bazi' && (birth ? <BaZiModule /> : <ProfileSetup />)}
+      {module === 'tongshu' && <TongShuModule />}
+      {module === 'qimen' && <QiMenModule />}
+      {module === 'sesheta' && <SeshetaChat />}
+      {module === 'numerology' && <NumerologyModule />}
+    </Layout>
+  )
 }
-
-export default App;

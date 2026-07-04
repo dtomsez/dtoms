@@ -1,73 +1,38 @@
-# React + TypeScript + Vite
+# Sesheta — Chinese Metaphysics AI (Web App)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+เว็บแอพรวมทุกศาสตร์จีนไว้ในที่เดียว สร้างด้วย React + TypeScript + Vite + Tailwind CSS
+คำนวณทั้งหมดฝั่ง client ด้วยเอนจินปฏิทินกานจือ (干支) ที่เขียนขึ้นเอง — ไม่ต้องมี backend
 
-Currently, two official plugins are available:
+## โมดูล
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. **BaZi 八字 (ดวงชะตาสี่เสา)** — Natal Chart 4 เสา พร้อม Hidden Stems และสิบเทพ (十神),
+   Day Master Insight (10 อาร์คีไทป์), กำลังเจ้าวัน 4 ระดับ, โครงสร้างชะตา (ปกติ/ตามกระแส/เอกฉันท์/พิเศษ),
+   เทพประโยชน์ (用神), Destiny Matrix สัดส่วนธาตุ 5, เสาโชค 10 รอบ + Transit รายปี,
+   ดาวมงคล/อัปมงคล (神煞), ฉักลักษณ์ 64 Hexagrams ประจำเสา
+2. **Tong Shu 通勝 (ปฏิทินมงคล)** — ปฏิทินรายเดือนพร้อมจุดสีวันดี-วันร้าย, 12 Day Officers (建除),
+   Day Stars + Star Power Score, Yellow & Black Belt (黃道黑道), 28 กลุ่มดาว (二十八宿),
+   XKDG ประจำวัน, Personal Resonance เทียบดวงส่วนตัว, Element Alignment, เสาเวลา 12 ยาม
+3. **Qi Men Dun Jia 奇門遁甲** — ผัง 9 วัง (Star / Door / Deity / ราศีฟ้า-ดิน),
+   4 ประเภทผัง (ชั่วโมง/วัน/เดือน/ปี), เลือกวันเวลาอิสระ + Quick Navigation,
+   Destiny View วังชะตาส่วนตัว + Deity Insight
+4. **Sesheta AI** — แชทที่ปรึกษาดวงชะตา อ้างอิงดวง BaZi จริงของผู้ใช้ (Rich BaZi Context),
+   ถามอนาคตได้ (Transit Forecasting คำนวณเสาปี/เดือนจริง), โหมดวิเคราะห์ฤกษ์ยามมงคล,
+   สแกนหาวันดี 30 วันล่วงหน้าแบบ personalized
+5. **เลขศาสตร์ 數字** — ตัวเลขประจำตัวจากเสาวันเกิด, วิเคราะห์เบอร์มือถือรายคู่เลข
+   (ท้ายเบอร์น้ำหนัก ×2), สมดุลธาตุของเบอร์ตามผังเหอถูเทียบกับเทพประโยชน์ในดวงผู้ใช้
 
-## React Compiler
+## การใช้งาน
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev      # เปิด dev server
+npm run build    # สร้างไฟล์เดียว dist/index.html (vite-plugin-singlefile)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+เข้าสู่ระบบด้วยปุ่ม Google (demo auth) → กรอกวันเวลาเกิด → ทุกโมดูลปลดล็อกการวิเคราะห์ส่วนบุคคล
+ข้อมูลโปรไฟล์และประวัติแชทเก็บใน localStorage
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## หมายเหตุความแม่นยำ
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+ขอบเขตสารทจีน (立春 ฯลฯ) ใช้วันที่มาตรฐานโดยประมาณ ปีจริงอาจคลาดเคลื่อน ±1 วัน
+สำหรับผู้เกิดคาบเกี่ยววันตัดสารท ควรตรวจสอบกับปฏิทินหมื่นปีอีกครั้ง
