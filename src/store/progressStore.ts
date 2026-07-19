@@ -5,6 +5,7 @@ import type { Lang } from '../types/content'
 import type { DailyStat, Grade, SrsCard, UnitProgress } from '../types/progress'
 import { isDue, newCard, schedule } from '../lib/srs'
 import { supabase } from '../lib/supabase'
+import { sheetsPull, sheetsPush, type SheetsAuth } from '../lib/sheets'
 import { useAuthStore } from './authStore'
 
 interface StatDelta {
@@ -35,6 +36,57 @@ export function todayKey(now: Date = new Date()): string {
 function userId(): string | null {
   const auth = useAuthStore.getState()
   return auth.status === 'authed' ? auth.userId : null
+}
+
+function sheetsAuth(): SheetsAuth | null {
+  const auth = useAuthStore.getState()
+  if (auth.provider === 'sheets' && auth.status === 'authed' && auth.userId && auth.token) {
+    return { email: auth.userId, token: auth.token }
+  }
+  return null
+}
+
+// Google Sheets: sync ทั้งชุดแบบ debounced (รวมหลายการเปลี่ยนแปลงเป็นคำขอเดียว)
+let syncTimer: ReturnType<typeof setTimeout> | undefined
+let syncing = false
+let syncAgain = false
+
+async function flushSheetsSync(): Promise<void> {
+  const auth = sheetsAuth()
+  if (!auth) return
+  if (syncing) {
+    syncAgain = true
+    return
+  }
+  syncing = true
+  try {
+    const { cards, units, daily } = useProgressStore.getState()
+    await sheetsPush(auth, { cards, units, daily })
+  } finally {
+    syncing = false
+    if (syncAgain) {
+      syncAgain = false
+      void flushSheetsSync()
+    }
+  }
+}
+
+function scheduleSync(): void {
+  if (!sheetsAuth()) return
+  if (syncTimer) clearTimeout(syncTimer)
+  syncTimer = setTimeout(() => void flushSheetsSync(), 2500)
+}
+
+if (typeof window !== 'undefined') {
+  // บันทึกทันทีก่อนปิด/สลับแท็บ กันข้อมูลรอบล่าสุดหาย
+  const flushNow = () => {
+    if (syncTimer) clearTimeout(syncTimer)
+    void flushSheetsSync()
+  }
+  window.addEventListener('pagehide', flushNow)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushNow()
+  })
 }
 
 function pushCard(card: SrsCard): void {
@@ -96,6 +148,7 @@ export const useProgressStore = create<ProgressState>()(
           pushCard(card)
         }
         set({ cards: { ...cards, ...added } })
+        scheduleSync()
         return fresh.length
       },
 
@@ -106,6 +159,7 @@ export const useProgressStore = create<ProgressState>()(
         set({ cards: { ...cards, [itemId]: next } })
         pushCard(next)
         get().addStat({ reviewsDone: 1, xp: grade >= 3 ? 2 : 1 })
+        scheduleSync()
       },
 
       startUnit: (unitId) => {
@@ -114,6 +168,7 @@ export const useProgressStore = create<ProgressState>()(
         const unit: UnitProgress = { unitId, status: 'in_progress', bestScore: 0, completedAt: null }
         set({ units: { ...units, [unitId]: unit } })
         pushUnit(unit)
+        scheduleSync()
       },
 
       completeUnit: (unitId, score) => {
@@ -127,6 +182,7 @@ export const useProgressStore = create<ProgressState>()(
         }
         set({ units: { ...units, [unitId]: unit } })
         pushUnit(unit)
+        scheduleSync()
       },
 
       addStat: (delta) => {
@@ -142,9 +198,39 @@ export const useProgressStore = create<ProgressState>()(
         }
         set({ daily: { ...daily, [key]: stat } })
         pushDaily(stat)
+        scheduleSync()
       },
 
       pullFromServer: async () => {
+        // Google Sheets backend: ดึงข้อมูลแล้ว merge แบบ recency-wins
+        const sheets = sheetsAuth()
+        if (sheets) {
+          const remote = await sheetsPull(sheets)
+          if (!remote) return
+          const state = get()
+          const cards = { ...state.cards }
+          for (const [id, server] of Object.entries(remote.cards)) {
+            const local = cards[id]
+            const serverTime = server.lastReviewedAt ? Date.parse(server.lastReviewedAt) : 0
+            const localTime = local?.lastReviewedAt ? Date.parse(local.lastReviewedAt) : -1
+            if (!local || serverTime >= localTime) cards[id] = server
+          }
+          const units = { ...state.units }
+          for (const [id, server] of Object.entries(remote.units)) {
+            const local = units[id]
+            if (!local || (server.status === 'completed' && local.status !== 'completed')) units[id] = server
+          }
+          const daily = { ...state.daily }
+          for (const [date, server] of Object.entries(remote.daily)) {
+            const local = daily[date]
+            if (!local || server.xp >= local.xp) daily[date] = server
+          }
+          set({ cards, units, daily })
+          // เขียนผลรวมที่ merge แล้วกลับขึ้น Sheets (กันข้อมูลฝั่ง local ที่ยังไม่ถูก sync)
+          scheduleSync()
+          return
+        }
+
         const uid = userId()
         if (!supabase || !uid) return
         const [cardsRes, unitsRes, dailyRes] = await Promise.all([

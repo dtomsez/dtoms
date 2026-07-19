@@ -16,7 +16,8 @@
 - **ฝึกเขียน** — ฟัง-พิมพ์ตามคำบอก, แปลประโยคไทย→เป้าหมาย และ **เขียนอักษรจีนตามลำดับขีด** (hanzi-writer)
 - **ฝึกอ่าน** — บทความตามระดับ แตะคำเพื่อดูคำแปล/พินอิน + ฟังเสียงทั้งบท + แบบทดสอบความเข้าใจ
 - **เกมิฟิเคชัน** — XP, streak รายวัน, เหรียญตรา (7/30/100 วันติด, ครบ 100/500/1000 คำ)
-- **ระบบสมาชิก** — เข้าสู่ระบบด้วย Supabase (ข้อมูลซิงก์ข้ามอุปกรณ์) หรือใช้ **โหมด Guest** (เก็บในเครื่อง)
+- **ระบบสมาชิก + ฐานข้อมูล** — เข้าสู่ระบบแล้วซิงก์ความคืบหน้าข้ามอุปกรณ์ ผ่าน **Google Sheets**
+  (แนะนำ) หรือ Supabase หรือใช้ **โหมด Guest** (เก็บในเครื่อง) โดยไม่ต้องตั้งค่าอะไร
 
 > คำแปลและคำอธิบายทั้งหมดเป็น **ภาษาไทย** — UI ออกแบบสำหรับผู้เรียนคนไทยและเน้นใช้บนมือถือ
 
@@ -33,20 +34,50 @@ npm run dev
 > การฝึกพูดต้องใช้เบราว์เซอร์ที่รองรับ Web Speech API — แนะนำ **Google Chrome** หรือ **Microsoft Edge**
 > และต้องอนุญาตสิทธิ์ไมโครโฟน ส่วนการเขียนอักษรจีนต้องต่ออินเทอร์เน็ต (โหลดข้อมูลเส้นอักษรจาก CDN)
 
-## เปิดระบบสมาชิก (ไม่บังคับ — ข้ามได้ถ้าใช้ Guest)
+## เชื่อม Google Sheets เป็นฐานข้อมูล (แนะนำ — ไม่บังคับ, ข้ามได้ถ้าใช้ Guest)
 
-1. สร้างโปรเจกต์ฟรีที่ [supabase.com](https://supabase.com)
-2. ไปที่ **SQL Editor** แล้วรันไฟล์ [`supabase/schema.sql`](supabase/schema.sql)
-   เพื่อสร้างตารางและเปิด Row Level Security
-3. คัดลอก `.env.example` เป็น `.env.local` แล้วใส่ค่าจาก **Project Settings → API**:
+ใช้ Google Sheet ของคุณเองเป็นฐานข้อมูล ผ่าน **Google Apps Script Web App** — ฟรี ไม่ต้องมีเซิร์ฟเวอร์
+และไม่ต้องเก็บ secret ใด ๆ ไว้ในเว็บ
 
-   ```env
-   VITE_SUPABASE_URL=https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJhbGci...
-   ```
+1. สร้าง **Google Sheet** ใหม่ 1 ไฟล์ (ตั้งชื่ออะไรก็ได้)
+2. เมนู **Extensions → Apps Script** แล้ววางโค้ดทั้งไฟล์ [`google-apps-script/Code.gs`](google-apps-script/Code.gs)
+   ทับของเดิม จากนั้นแก้บรรทัด `SECRET` เป็นข้อความสุ่มยาว ๆ ของคุณเอง
+3. กด **Deploy → New deployment → Web app**
+   - Execute as: **Me**
+   - Who has access: **Anyone**
 
-4. รัน `npm run dev` ใหม่ — หน้า Login จะสมัคร/เข้าสู่ระบบด้วยอีเมลได้
-   และความคืบหน้าจะซิงก์ขึ้น Supabase อัตโนมัติ (offline-first: บันทึกในเครื่องก่อน แล้วซิงก์)
+   คัดลอก URL ที่ได้ (ลงท้ายด้วย `/exec`)
+4. นำ URL ไปใช้ทางใดทางหนึ่ง:
+   - **บนเว็บที่ deploy แล้ว** — เปิดแอป → หน้า Login → กด "เชื่อมต่อ Google Sheets เป็นฐานข้อมูล"
+     → วาง URL → บันทึก (ไม่ต้อง build ใหม่)
+   - **ตอนพัฒนา/ตอน build** — ใส่ในไฟล์ `.env.local` (คัดลอกจาก `.env.example`):
+
+     ```env
+     VITE_SHEETS_API_URL=https://script.google.com/macros/s/.../exec
+     ```
+
+5. สมัคร/เข้าสู่ระบบด้วยอีเมล — ความคืบหน้าจะถูกบันทึกลงชีต (แท็บ `srs_progress`, `unit_progress`,
+   `daily_stats` สร้างอัตโนมัติ) แบบ offline-first: บันทึกในเครื่องก่อนแล้วซิงก์ขึ้นชีตให้เอง
+
+> รหัสผ่านถูกเก็บเป็นค่าแฮช (SHA-256) ในชีต เหมาะกับแอปส่วนตัว — สำหรับใช้จริงหลายคน แนะนำ Supabase
+
+### ทางเลือก: Supabase แทน Google Sheets
+
+สร้างโปรเจกต์ฟรีที่ [supabase.com](https://supabase.com), รัน [`supabase/schema.sql`](supabase/schema.sql)
+ใน SQL Editor, แล้วใส่ `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` ใน `.env.local`
+(ถ้าตั้งค่า Google Sheets ไว้ด้วย ระบบจะใช้ Google Sheets ก่อน)
+
+## Deploy ขึ้น Vercel
+
+แอปนี้ build เป็น **ไฟล์ HTML ไฟล์เดียว** (`dist/index.html`) โฮสต์เป็น static site ที่ไหนก็ได้ รวมถึง Vercel:
+
+- **วิธีที่ง่ายที่สุด** — Import repo นี้เข้า Vercel, Vercel จะตรวจเจอ Vite เอง
+  (Build: `npm run build`, Output: `dist`) แล้ว deploy ให้อัตโนมัติ
+- ถ้าต้องการเปิด Google Sheets แบบ build-time ให้เพิ่ม Environment Variable `VITE_SHEETS_API_URL`
+  ใน Vercel (Project → Settings → Environment Variables) แล้ว redeploy — หรือจะข้ามขั้นนี้แล้วไปวาง URL
+  ในหน้า Login ของเว็บที่ deploy แล้วก็ได้ (เก็บในเบราว์เซอร์ของคุณ)
+
+เพราะแอปใช้ **HashRouter** ทุกเส้นทางอยู่หลัง `#` จึงไม่ต้องตั้ง rewrite ใด ๆ บน Vercel
 
 ## สคริปต์
 
@@ -69,5 +100,5 @@ npm run dev
 - **State**: Zustand (+ `persist` สำหรับ offline/guest)
 - **เสียง**: Web Speech API (`speechSynthesis` + `SpeechRecognition`)
 - **เขียนจีน**: hanzi-writer
-- **Backend (ไม่บังคับ)**: Supabase (Auth + Postgres + RLS)
+- **Backend (ไม่บังคับ)**: Google Sheets ผ่าน Apps Script Web App (แนะนำ) หรือ Supabase (Auth + Postgres + RLS)
 - **อัลกอริทึมทบทวน**: SM-2 (`src/lib/srs.ts`)

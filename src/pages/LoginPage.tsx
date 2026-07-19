@@ -1,16 +1,19 @@
 import { useState, type FormEvent } from 'react'
-import { LogIn, UserPlus, UserRound } from 'lucide-react'
+import { Database, LogIn, UserPlus, UserRound } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { getSheetsUrl, saveSheetsUrl } from '../lib/sheets'
 
 export default function LoginPage() {
-  const { signIn, signUp, continueAsGuest } = useAuthStore()
+  const { signIn, signUp, continueAsGuest, provider } = useAuthStore()
+  const hasBackend = provider !== 'none'
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [showConfig, setShowConfig] = useState(false)
+  const [sheetsUrl, setSheetsUrl] = useState(getSheetsUrl())
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -87,10 +90,15 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {!isSupabaseConfigured && (
+          {provider === 'sheets' && (
+            <div className="text-xs text-emerald-700 bg-emerald-50 rounded-lg p-2 mt-3">
+              เชื่อมต่อ Google Sheets แล้ว — สมัคร/เข้าสู่ระบบเพื่อบันทึกความคืบหน้าลงชีตและซิงก์ข้ามอุปกรณ์
+            </div>
+          )}
+          {!hasBackend && (
             <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mt-3">
-              ยังไม่ได้ตั้งค่า Supabase — ใช้โหมด Guest ได้เลย (ข้อมูลเก็บในเครื่องนี้)
-              วิธีเปิดระบบสมาชิกอยู่ใน README
+              ยังไม่ได้ตั้งค่าฐานข้อมูล — ใช้โหมด Guest ได้เลย (ข้อมูลเก็บในเครื่องนี้)
+              วิธีเชื่อม Google Sheets อยู่ใน README
             </div>
           )}
 
@@ -101,6 +109,38 @@ export default function LoginPage() {
           >
             <UserRound size={18} /> ใช้แบบไม่ login (Guest)
           </button>
+
+          {/* ตั้งค่า Google Sheets เป็นฐานข้อมูล (วาง URL ได้เองบนเว็บที่ deploy แล้ว) */}
+          <button
+            type="button"
+            onClick={() => setShowConfig((v) => !v)}
+            className="w-full flex items-center justify-center gap-1.5 mt-3 text-xs text-slate-400 hover:text-slate-600"
+          >
+            <Database size={14} /> เชื่อมต่อ Google Sheets เป็นฐานข้อมูล
+          </button>
+          {showConfig && (
+            <div className="mt-2 grid gap-2 bg-slate-50 rounded-xl p-3">
+              <p className="text-xs text-slate-500">
+                วาง URL ของ Google Apps Script Web App (ลงท้าย <code>/exec</code>) — ดูวิธีสร้างใน README
+              </p>
+              <input
+                value={sheetsUrl}
+                onChange={(e) => setSheetsUrl(e.target.value)}
+                placeholder="https://script.google.com/macros/s/.../exec"
+                className="rounded-lg border-2 border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  saveSheetsUrl(sheetsUrl)
+                  window.location.reload()
+                }}
+                className="py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700"
+              >
+                บันทึกและเชื่อมต่อ
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

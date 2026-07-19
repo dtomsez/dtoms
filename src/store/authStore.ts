@@ -1,12 +1,16 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { sheetsConfigured, sheetsLogin, sheetsRegister, type SheetsAuth } from '../lib/sheets'
 
 export type AuthStatus = 'loading' | 'signedout' | 'guest' | 'authed'
+export type AuthProvider = 'sheets' | 'supabase' | 'none'
 
 interface AuthState {
   status: AuthStatus
+  provider: AuthProvider
   userId: string | null
   email: string | null
+  token: string | null
   init: () => Promise<void>
   signIn: (email: string, password: string) => Promise<string | null>
   signUp: (email: string, password: string) => Promise<string | null>
@@ -15,6 +19,19 @@ interface AuthState {
 }
 
 const GUEST_KEY = 'lingodaily-guest'
+const SHEETS_SESSION_KEY = 'lingodaily-sheets-session'
+
+// เลือก backend: Google Sheets มาก่อน แล้วค่อย Supabase ถ้าไม่ตั้งค่าทั้งคู่ = guest เท่านั้น
+const PROVIDER: AuthProvider = sheetsConfigured ? 'sheets' : supabase ? 'supabase' : 'none'
+
+function loadSheetsSession(): SheetsAuth | null {
+  try {
+    const raw = localStorage.getItem(SHEETS_SESSION_KEY)
+    return raw ? (JSON.parse(raw) as SheetsAuth) : null
+  } catch {
+    return null
+  }
+}
 
 function translateError(message: string): string {
   if (/invalid login credentials/i.test(message)) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
@@ -27,56 +44,90 @@ function translateError(message: string): string {
 
 export const useAuthStore = create<AuthState>((set) => ({
   status: 'loading',
+  provider: PROVIDER,
   userId: null,
   email: null,
+  token: null,
 
   init: async () => {
-    if (!supabase) {
-      // ไม่ได้ตั้งค่า Supabase → ใช้ guest mode ได้อย่างเดียว
-      const wasGuest = localStorage.getItem(GUEST_KEY) === '1'
-      set({ status: wasGuest ? 'guest' : 'signedout', userId: null, email: null })
+    const wasGuest = () => localStorage.getItem(GUEST_KEY) === '1'
+
+    if (PROVIDER === 'sheets') {
+      const session = loadSheetsSession()
+      if (session) {
+        set({ status: 'authed', userId: session.email, email: session.email, token: session.token })
+      } else {
+        set({ status: wasGuest() ? 'guest' : 'signedout' })
+      }
       return
     }
-    const { data } = await supabase.auth.getSession()
-    if (data.session) {
-      set({ status: 'authed', userId: data.session.user.id, email: data.session.user.email ?? null })
-    } else {
-      const wasGuest = localStorage.getItem(GUEST_KEY) === '1'
-      set({ status: wasGuest ? 'guest' : 'signedout' })
-    }
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        set({ status: 'authed', userId: session.user.id, email: session.user.email ?? null })
-      } else if (localStorage.getItem(GUEST_KEY) !== '1') {
-        set({ status: 'signedout', userId: null, email: null })
+
+    if (PROVIDER === 'supabase' && supabase) {
+      const { data } = await supabase.auth.getSession()
+      if (data.session) {
+        set({ status: 'authed', userId: data.session.user.id, email: data.session.user.email ?? null })
+      } else {
+        set({ status: wasGuest() ? 'guest' : 'signedout' })
       }
-    })
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          set({ status: 'authed', userId: session.user.id, email: session.user.email ?? null })
+        } else if (!wasGuest()) {
+          set({ status: 'signedout', userId: null, email: null })
+        }
+      })
+      return
+    }
+
+    // ไม่มี backend → guest mode อย่างเดียว
+    set({ status: wasGuest() ? 'guest' : 'signedout', userId: null, email: null })
   },
 
   signIn: async (email, password) => {
-    if (!supabase) return 'ยังไม่ได้ตั้งค่า Supabase (ดูวิธีใน README) — ใช้โหมด Guest ได้เลย'
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return translateError(error.message)
-    localStorage.removeItem(GUEST_KEY)
-    return null
+    if (PROVIDER === 'sheets') {
+      const { auth, error } = await sheetsLogin(email, password)
+      if (error || !auth) return error ?? 'เข้าสู่ระบบไม่สำเร็จ'
+      localStorage.setItem(SHEETS_SESSION_KEY, JSON.stringify(auth))
+      localStorage.removeItem(GUEST_KEY)
+      set({ status: 'authed', userId: auth.email, email: auth.email, token: auth.token })
+      return null
+    }
+    if (PROVIDER === 'supabase' && supabase) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) return translateError(error.message)
+      localStorage.removeItem(GUEST_KEY)
+      return null
+    }
+    return 'ยังไม่ได้ตั้งค่าฐานข้อมูล (ดูวิธีใน README) — ใช้โหมด Guest ได้เลย'
   },
 
   signUp: async (email, password) => {
-    if (!supabase) return 'ยังไม่ได้ตั้งค่า Supabase (ดูวิธีใน README) — ใช้โหมด Guest ได้เลย'
-    const { error } = await supabase.auth.signUp({ email, password })
-    if (error) return translateError(error.message)
-    localStorage.removeItem(GUEST_KEY)
-    return null
+    if (PROVIDER === 'sheets') {
+      const { auth, error } = await sheetsRegister(email, password)
+      if (error || !auth) return error ?? 'สมัครไม่สำเร็จ'
+      localStorage.setItem(SHEETS_SESSION_KEY, JSON.stringify(auth))
+      localStorage.removeItem(GUEST_KEY)
+      set({ status: 'authed', userId: auth.email, email: auth.email, token: auth.token })
+      return null
+    }
+    if (PROVIDER === 'supabase' && supabase) {
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) return translateError(error.message)
+      localStorage.removeItem(GUEST_KEY)
+      return null
+    }
+    return 'ยังไม่ได้ตั้งค่าฐานข้อมูล (ดูวิธีใน README) — ใช้โหมด Guest ได้เลย'
   },
 
   signOut: async () => {
     localStorage.removeItem(GUEST_KEY)
-    if (supabase) await supabase.auth.signOut()
-    set({ status: 'signedout', userId: null, email: null })
+    localStorage.removeItem(SHEETS_SESSION_KEY)
+    if (PROVIDER === 'supabase' && supabase) await supabase.auth.signOut()
+    set({ status: 'signedout', userId: null, email: null, token: null })
   },
 
   continueAsGuest: () => {
     localStorage.setItem(GUEST_KEY, '1')
-    set({ status: 'guest', userId: null, email: null })
+    set({ status: 'guest', userId: null, email: null, token: null })
   },
 }))
