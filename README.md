@@ -3,6 +3,9 @@
 เว็บแอปฝึก **ภาษาอังกฤษ (CEFR)** และ **ภาษาจีน (HSK)** ทุกวัน ครบทั้ง 4 ทักษะ —
 อ่าน เขียน ฟัง พูด — ออกแบบรอบ "วงจรฝึกรายวัน" (daily loop) เพื่อพาไปถึงระดับสูงแบบเจ้าของภาษา
 
+**🔗 เว็บใช้งานจริง: https://lingodaily-web.vercel.app**
+(เปิดใช้ได้เลยในโหมด Guest — จะเชื่อม Google Sheets เพื่อบันทึกข้ามอุปกรณ์ก็ทำได้ในหน้า Login)
+
 สร้างด้วย React 19 + Vite + TypeScript + Tailwind + Zustand
 
 ## ฟีเจอร์
@@ -71,13 +74,17 @@ npm run dev
 
 แอปนี้ build เป็น **ไฟล์ HTML ไฟล์เดียว** (`dist/index.html`) โฮสต์เป็น static site ที่ไหนก็ได้ รวมถึง Vercel:
 
-- **วิธีที่ง่ายที่สุด** — Import repo นี้เข้า Vercel, Vercel จะตรวจเจอ Vite เอง
-  (Build: `npm run build`, Output: `dist`) แล้ว deploy ให้อัตโนมัติ
+- **วิธีที่ง่ายที่สุด (แนะนำ, auto-deploy)** — ที่ Vercel กด **Add New → Project → Import Git Repository**
+  แล้วเลือก repo นี้ Vercel จะตรวจเจอ Vite เอง (Build: `npm run build`, Output: `dist`)
+  และ deploy ใหม่อัตโนมัติทุกครั้งที่ push โค้ด
 - ถ้าต้องการเปิด Google Sheets แบบ build-time ให้เพิ่ม Environment Variable `VITE_SHEETS_API_URL`
   ใน Vercel (Project → Settings → Environment Variables) แล้ว redeploy — หรือจะข้ามขั้นนี้แล้วไปวาง URL
   ในหน้า Login ของเว็บที่ deploy แล้วก็ได้ (เก็บในเบราว์เซอร์ของคุณ)
 
 เพราะแอปใช้ **HashRouter** ทุกเส้นทางอยู่หลัง `#` จึงไม่ต้องตั้ง rewrite ใด ๆ บน Vercel
+
+> หมายเหตุ: เว็บตัวอย่าง https://lingodaily-web.vercel.app ที่ deploy ไว้ให้ ตรึงไว้กับโค้ดเวอร์ชันหนึ่ง —
+> ถ้าอยากให้เว็บอัปเดตอัตโนมัติเมื่อแก้โค้ด ให้เชื่อม Vercel กับ GitHub repo ตามวิธีแรก
 
 ## สคริปต์
 
