@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# 🌏 LingoDaily
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+เว็บแอปฝึก **ภาษาอังกฤษ (CEFR)** และ **ภาษาจีน (HSK)** ทุกวัน ครบทั้ง 4 ทักษะ —
+อ่าน เขียน ฟัง พูด — ออกแบบรอบ "วงจรฝึกรายวัน" (daily loop) เพื่อพาไปถึงระดับสูงแบบเจ้าของภาษา
 
-Currently, two official plugins are available:
+สร้างด้วย React 19 + Vite + TypeScript + Tailwind + Zustand
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ฟีเจอร์
 
-## React Compiler
+- **แดชบอร์ดรายวัน** — streak, เป้า XP, คิวคำที่ถึงกำหนดทบทวน และ heatmap 3 เดือน
+- **เส้นทางบทเรียน** — หลักสูตร CEFR (A1–A2) และ HSK (1–2) เป็นบทปลดล็อกตามลำดับ
+  แต่ละบท: แนะนำคำศัพท์ → จับคู่ → ทดสอบท้ายบท
+- **ทบทวนแบบ Spaced Repetition (SM-2)** — สุ่มรูปแบบโจทย์ flashcard / เลือกตอบ / ฟัง-พิมพ์
+- **ฝึกพูด** — ฟังเสียงเจ้าของภาษา (Text-to-Speech) แล้วพูดตาม ระบบรู้จำเสียง (Speech Recognition)
+  ให้คะแนนการออกเสียงเป็น % พร้อมไฮไลต์คำที่ยังไม่ตรง
+- **ฝึกเขียน** — ฟัง-พิมพ์ตามคำบอก, แปลประโยคไทย→เป้าหมาย และ **เขียนอักษรจีนตามลำดับขีด** (hanzi-writer)
+- **ฝึกอ่าน** — บทความตามระดับ แตะคำเพื่อดูคำแปล/พินอิน + ฟังเสียงทั้งบท + แบบทดสอบความเข้าใจ
+- **เกมิฟิเคชัน** — XP, streak รายวัน, เหรียญตรา (7/30/100 วันติด, ครบ 100/500/1000 คำ)
+- **ระบบสมาชิก** — เข้าสู่ระบบด้วย Supabase (ข้อมูลซิงก์ข้ามอุปกรณ์) หรือใช้ **โหมด Guest** (เก็บในเครื่อง)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+> คำแปลและคำอธิบายทั้งหมดเป็น **ภาษาไทย** — UI ออกแบบสำหรับผู้เรียนคนไทยและเน้นใช้บนมือถือ
 
-## Expanding the ESLint configuration
+## เริ่มต้นใช้งาน
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+เปิด http://localhost:5173 แล้วกด **"ใช้แบบไม่ login (Guest)"** เพื่อเริ่มเรียนได้ทันที
+โดยไม่ต้องตั้งค่าอะไรเพิ่ม (ข้อมูลจะเก็บใน localStorage ของเบราว์เซอร์)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+> การฝึกพูดต้องใช้เบราว์เซอร์ที่รองรับ Web Speech API — แนะนำ **Google Chrome** หรือ **Microsoft Edge**
+> และต้องอนุญาตสิทธิ์ไมโครโฟน ส่วนการเขียนอักษรจีนต้องต่ออินเทอร์เน็ต (โหลดข้อมูลเส้นอักษรจาก CDN)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## เปิดระบบสมาชิก (ไม่บังคับ — ข้ามได้ถ้าใช้ Guest)
+
+1. สร้างโปรเจกต์ฟรีที่ [supabase.com](https://supabase.com)
+2. ไปที่ **SQL Editor** แล้วรันไฟล์ [`supabase/schema.sql`](supabase/schema.sql)
+   เพื่อสร้างตารางและเปิด Row Level Security
+3. คัดลอก `.env.example` เป็น `.env.local` แล้วใส่ค่าจาก **Project Settings → API**:
+
+   ```env
+   VITE_SUPABASE_URL=https://xxxx.supabase.co
+   VITE_SUPABASE_ANON_KEY=eyJhbGci...
+   ```
+
+4. รัน `npm run dev` ใหม่ — หน้า Login จะสมัคร/เข้าสู่ระบบด้วยอีเมลได้
+   และความคืบหน้าจะซิงก์ขึ้น Supabase อัตโนมัติ (offline-first: บันทึกในเครื่องก่อน แล้วซิงก์)
+
+## สคริปต์
+
+| คำสั่ง | ทำอะไร |
+|---|---|
+| `npm run dev` | รันเซิร์ฟเวอร์พัฒนา |
+| `npm run build` | ตรวจชนิดข้อมูลและ build เป็นไฟล์ static (`dist/`) — รวมเป็น `index.html` ไฟล์เดียว |
+| `npm run preview` | เปิดดูผลลัพธ์ที่ build แล้ว |
+| `npm run lint` | ตรวจ ESLint |
+
+## โครงสร้างเนื้อหา / เพิ่มระดับ
+
+เนื้อหาบทเรียนอยู่ใน `src/data/content/` เป็นไฟล์ TypeScript ที่สร้างจาก `builder.ts`
+เพิ่มระดับใหม่ (เช่น B1 หรือ HSK 3) ได้โดยเพิ่มไฟล์ตามรูปแบบเดิมแล้วลงทะเบียนใน `src/data/content/index.ts`
+โครงสร้างรองรับการขยายไปถึง C2 / HSK 6
+
+## เทคโนโลยี
+
+- **UI**: React 19, React Router, Tailwind CSS, lucide-react
+- **State**: Zustand (+ `persist` สำหรับ offline/guest)
+- **เสียง**: Web Speech API (`speechSynthesis` + `SpeechRecognition`)
+- **เขียนจีน**: hanzi-writer
+- **Backend (ไม่บังคับ)**: Supabase (Auth + Postgres + RLS)
+- **อัลกอริทึมทบทวน**: SM-2 (`src/lib/srs.ts`)

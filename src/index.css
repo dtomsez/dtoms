@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 * {
   box-sizing: border-box;
@@ -10,9 +10,9 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Noto Sans Thai', sans-serif;
-  background-color: #f8f4ef;
-  color: #1a1a1a;
+  font-family: 'Noto Sans Thai', 'Inter', 'Noto Sans SC', sans-serif;
+  background-color: #f5f6fa;
+  color: #1a1d27;
   min-height: 100vh;
 }
 
@@ -20,27 +20,18 @@ body {
   min-height: 100vh;
 }
 
-/* Custom scrollbar */
+.font-zh {
+  font-family: 'Noto Sans SC', 'Noto Sans Thai', sans-serif;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1ece6;
+  background: #eef0f5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c07320;
+  background: #c3c9d9;
   border-radius: 3px;
-}
-
-/* Drag overlay styles */
-.dragging-card {
-  opacity: 0.5;
-}
-
-/* Kanban column scroll */
-.kanban-column {
-  min-height: 200px;
-  max-height: calc(100vh - 280px);
-  overflow-y: auto;
 }
